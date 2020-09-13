@@ -1,0 +1,5 @@
+# vim swap files
+*.sw?
+
+# direnv python layout
+.direnv
