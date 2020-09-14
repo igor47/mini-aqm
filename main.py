@@ -4,8 +4,8 @@ import click
 from colorama import Fore, Style
 import logging
 import os
-import time
-from typing import Tuple
+import systemd_watchdog
+from typing import Tuple, Optional
 
 from influxdb_logger import InfluxdbLogger
 from pms7003 import PMS7003, PMSData
@@ -71,10 +71,9 @@ def print_pm(data: PMSData) -> None:
 @click.command()
 @click.option(
     "--port",
-    default="/dev/ttyUSB0",
+    default=None,
     help="Location of PMS7003 TTY device",
-    required=True,
-    show_default=True,
+    show_default="scans possible ports for devices",
 )
 @click.option(
     "--debug/--no-debug",
@@ -94,36 +93,45 @@ def print_pm(data: PMSData) -> None:
     show_default=True,
 )
 def main(
-    port: str, debug: bool, log_only: bool, log_path: str
+    port: Optional[str], debug: bool, log_only: bool, log_path: str
 ) -> None:
-    if not os.access(port, mode=os.R_OK, follow_symlinks=True):
+    devs = PMS7003.get_all(only=port)
+    if not devs:
         click.echo(
-            f"{Fore.RED}cannot access {port}; check path and permissions", err=True
+            f"{Fore.RED}"
+            f"cannot find PMS7003 on any checked port; check path and permissions"
+            f"{Style.RESET_ALL}",
+            err=True
         )
         return
 
     logger = InfluxdbLogger(log_path)
-    tags = {"type": "PMS7003", "id": port}
     click.echo(
         f"{Fore.BLUE}"
         f"writing influxdb measurement {logger.MEASUREMENT} to {logger.path}"
         f"{Style.RESET_ALL}"
     )
 
-    dev = PMS7003(port)
-    click.echo(f"{Fore.GREEN}beginning to read data from {port}...{Style.RESET_ALL}")
+    for dev in devs:
+        click.echo(f"{Fore.GREEN}beginning to read data from {dev.id}...{Style.RESET_ALL}")
+
+    # systemd watchdog, in case this is running as a systemd service
+    wd = systemd_watchdog.watchdog()
+    wd.ready()
 
     while True:
-        data = dev.read()
-        if debug:
-            print_verbose(data)
-        else:
-            logger.emit(
-                fields={k: v for k, v in data._asdict().items() if k.startswith("pm")},
-                tags=tags,
-            )
-            if not log_only:
-                print_pm(data)
+        wd.ping()
+        for dev in devs:
+            data = dev.read()
+            if debug:
+                print_verbose(data)
+            else:
+                logger.emit(
+                    fields={k: v for k, v in data._asdict().items() if k.startswith("pm")},
+                    tags={"type": "PMS7003", "id": dev.id},
+                )
+                if not log_only:
+                    print_pm(data)
 
 if __name__ == "__main__":
     main()

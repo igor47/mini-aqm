@@ -77,6 +77,14 @@ python-versions = "*"
 version = "2020.7.14"
 
 [[package]]
+category = "main"
+description = "sd_notify and sd_watchdog_enabled functionality for writing Python daemons under systemd"
+name = "systemd-watchdog"
+optional = false
+python-versions = ">=3.5"
+version = "0.9.0"
+
+[[package]]
 category = "dev"
 description = "Python Library for Tom's Obvious, Minimal Language"
 name = "toml"
@@ -101,7 +109,7 @@ python-versions = "*"
 version = "3.7.4.3"
 
 [metadata]
-content-hash = "a9dab89ad8c90e4a551a183c431e71e7bce29b2313e6588e8edfff981ddfeeb4"
+content-hash = "469c10c10e39b693460f2c837c7445024c779716b2ecb092ce6a61441ec2fa64"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -156,6 +164,10 @@ regex = [
     {file = "regex-2020.7.14-cp38-cp38-win32.whl", hash = "sha256:d6cff2276e502b86a25fd10c2a96973fdb45c7a977dca2138d661417f3728341"},
     {file = "regex-2020.7.14-cp38-cp38-win_amd64.whl", hash = "sha256:7a2dd66d2d4df34fa82c9dc85657c5e019b87932019947faece7983f2089a840"},
     {file = "regex-2020.7.14.tar.gz", hash = "sha256:3a3af27a8d23143c49a3420efe5b3f8cf1a48c6fc8bc6856b03f638abc1833bb"},
+]
+systemd-watchdog = [
+    {file = "systemd-watchdog-0.9.0.tar.gz", hash = "sha256:cacc10cea46603b2ad20dcba5ead2f745232a1737c24356debcef0d0d7a9d20e"},
+    {file = "systemd_watchdog-0.9.0-py2.py3-none-any.whl", hash = "sha256:902f96b33c2d02a3a0e8a0c36ad3a78f0903ac57bdcddb9d0d898a62e023a50b"},
 ]
 toml = [
     {file = "toml-0.10.1-py2.py3-none-any.whl", hash = "sha256:bda89d5935c2eac546d648028b9901107a595863cb36bae0c73ac804a9b4ce88"},

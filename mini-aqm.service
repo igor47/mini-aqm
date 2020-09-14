@@ -1,0 +1,21 @@
+[Unit]
+Description=Monitors and collects data from PMS7003
+Documentation=https://github.com/igor47/mini-aqm https://igor.moomers.org/minimal-viable-air-quality
+Requires=local-fs.target
+After=local-fs.target
+
+[Service]
+WorkingDirectory=/home/igor47/repos/mini-aqm
+ExecStartPre=/home/igor47/.asdf/installs/python/3.8.3/bin/poetry install
+ExecStart=/home/igor47/.asdf/installs/python/3.8.3/bin/poetry run ./main.py
+
+Type=notify
+WatchdogSec=10
+RestartSec=10
+Restart=always
+
+User=igor47
+Group=igor47
+
+[Install]
+WantedBy=multi-user.target

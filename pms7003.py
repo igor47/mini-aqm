@@ -3,10 +3,11 @@ PMS7003 datasheet
 http://eleparts.co.kr/data/_gextends/good-pdf/201803/good-pdf-4208690-1.pdf
 """
 import logging
+import os
 import serial
 import struct
 import time
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, List, Optional
 
 
 class PMSData(NamedTuple):
@@ -44,12 +45,13 @@ class PMS7003(object):
     HEADER_LOW = int("0x4d", 16)
 
     # UART / USB Serial : 'dmesg | grep ttyUSB'
-    USB0 = "/dev/ttyUSB0"
-    UART = "/dev/ttyAMA0"
-    S0 = "/dev/serial0"
-
-    # USE PORT
-    DEFAULT_PORT = S0
+    POSSIBLE_PORTS = {
+        'USB0': "/dev/ttyUSB0",
+        'USB1': "/dev/ttyUSB1",
+        'USB2': "/dev/ttyUSB2",
+        'UART': "/dev/ttyAMA0",
+        'S0': "/dev/serial0",
+    }
 
     # Baud Rate
     SERIAL_SPEED = 9600
@@ -57,7 +59,27 @@ class PMS7003(object):
     # give up after trying to read for this long
     READ_TIMEOUT_SEC = 2
 
-    def __init__(self, port: str = DEFAULT_PORT):
+    @classmethod
+    def get_all(cls, only: Optional[str] = None) -> List['PMS7003']:
+        """checks several possible locations for PMS7003 devices
+
+        returns all valid locations
+        """
+        devs = []
+
+        possible = [only] if only else cls.POSSIBLE_PORTS.values()
+        for port in possible:
+            if os.access(port, mode=os.R_OK, follow_symlinks=True):
+                try:
+                    dev = PMS7003(port)
+                    if dev.read():
+                        devs.append(dev)
+                except:
+                    pass
+
+        return devs
+
+    def __init__(self, port: str = POSSIBLE_PORTS["S0"]):
         self.port = port
         self.buffer: bytes = b""
         self.log = logging.getLogger(str(self))
