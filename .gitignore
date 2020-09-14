@@ -6,3 +6,6 @@ __pycache__/
 
 # direnv python layout
 .direnv
+
+# log files
+*.log

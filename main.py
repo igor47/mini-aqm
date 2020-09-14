@@ -7,11 +7,9 @@ import os
 import time
 from typing import Tuple
 
+from influxdb_logger import InfluxdbLogger
 from pms7003 import PMS7003, PMSData
 
-AQI_PM25_BREAKPOINTS = {
-
-}
 def get_breakpoint(pm25: float) -> Tuple[str, str]:
     """get colorized breakpoint for the pm25 value"""
     if pm25 < 15.5:
@@ -89,6 +87,14 @@ def main(port: str, debug: bool) -> None:
         )
         return
 
+    logger = InfluxdbLogger()
+    tags = {'type': 'PMS7003', 'id': port}
+    click.echo(
+        f"{Fore.BLUE}"
+        f"writing influxdb measurement {logger.MEASUREMENT} to {logger.LOG_OUTPUT_FILE}"
+        f"{Style.RESET_ALL}"
+    )
+
     dev = PMS7003(port)
     click.echo(f"{Fore.GREEN}beginning to read data from {port}...{Style.RESET_ALL}")
 
@@ -98,6 +104,11 @@ def main(port: str, debug: bool) -> None:
             print_verbose(data)
         else:
             print_pm(data)
+            logger.emit(
+                fields={k:v for k,v in data._asdict().items() if k.startswith('pm')},
+                tags=tags,
+            )
+
         time.sleep(1)
 
 if __name__ == "__main__":
