@@ -10,6 +10,7 @@ from typing import Tuple
 from influxdb_logger import InfluxdbLogger
 from pms7003 import PMS7003, PMSData
 
+
 def get_breakpoint(pm25: float) -> Tuple[str, str]:
     """get colorized breakpoint for the pm25 value"""
     if pm25 < 15.5:
@@ -25,6 +26,7 @@ def get_breakpoint(pm25: float) -> Tuple[str, str]:
     else:
         return "Hazardous", Fore.MAGENTA
 
+
 def print_debug(data: PMSData) -> None:
     """print the entire PMSData structure to the console"""
     print(
@@ -36,9 +38,7 @@ def print_debug(data: PMSData) -> None:
     )
     print("PM 1.0 (CF=1) : %s\t | PM 1.0 : %s" % (data.pm1_0_cf1, data.pm1_0_atm))
     print("PM 2.5 (CF=1) : %s\t | PM 2.5 : %s" % (data.pm2_5_cf1, data.pm2_5_atm))
-    print(
-        "PM 10.0 (CF=1) : %s\t | PM 10.0 : %s" % (data.pm10_0_cf1, data.pm10_0_atm)
-    )
+    print("PM 10.0 (CF=1) : %s\t | PM 10.0 : %s" % (data.pm10_0_cf1, data.pm10_0_atm))
     print("0.3um in 0.1L of air : %s" % (data.count_0_3))
     print("0.5um in 0.1L of air : %s" % (data.count_0_5))
     print("1.0um in 0.1L of air : %s" % (data.count_1_0))
@@ -52,6 +52,7 @@ def print_debug(data: PMSData) -> None:
         "============================================================================"
     )
 
+
 def print_pm(data: PMSData) -> None:
     """print PM values to the console"""
     aqi, style = get_breakpoint(data.pm2_5_atm)
@@ -63,8 +64,9 @@ def print_pm(data: PMSData) -> None:
         "AQI": f"{style}{aqi}{Style.RESET_ALL}",
     }
 
-    pairs = [f"{k}: {v}" for k,v in result.items()]
+    pairs = [f"{k}: {v}" for k, v in result.items()]
     click.echo("  ".join(pairs))
+
 
 @click.command()
 @click.option(
@@ -75,23 +77,36 @@ def print_pm(data: PMSData) -> None:
     show_default=True,
 )
 @click.option(
-    "--debug",
+    "--debug/--no-debug",
     default=False,
     help="Print debug data from the device",
     show_default=True,
 )
-def main(port: str, debug: bool) -> None:
+@click.option(
+    "--log-only/--no-log-only",
+    default=False,
+    help="Only log to the influxdb log file; nothing on stdout",
+)
+@click.option(
+    "--log-path",
+    default="measurements.log",
+    help="Location where logs are written",
+    show_default=True,
+)
+def main(
+    port: str, debug: bool, log_only: bool, log_path: str
+) -> None:
     if not os.access(port, mode=os.R_OK, follow_symlinks=True):
         click.echo(
             f"{Fore.RED}cannot access {port}; check path and permissions", err=True
         )
         return
 
-    logger = InfluxdbLogger()
-    tags = {'type': 'PMS7003', 'id': port}
+    logger = InfluxdbLogger(log_path)
+    tags = {"type": "PMS7003", "id": port}
     click.echo(
         f"{Fore.BLUE}"
-        f"writing influxdb measurement {logger.MEASUREMENT} to {logger.LOG_OUTPUT_FILE}"
+        f"writing influxdb measurement {logger.MEASUREMENT} to {logger.path}"
         f"{Style.RESET_ALL}"
     )
 
@@ -103,13 +118,12 @@ def main(port: str, debug: bool) -> None:
         if debug:
             print_verbose(data)
         else:
-            print_pm(data)
             logger.emit(
-                fields={k:v for k,v in data._asdict().items() if k.startswith('pm')},
+                fields={k: v for k, v in data._asdict().items() if k.startswith("pm")},
                 tags=tags,
             )
-
-        time.sleep(1)
+            if not log_only:
+                print_pm(data)
 
 if __name__ == "__main__":
     main()

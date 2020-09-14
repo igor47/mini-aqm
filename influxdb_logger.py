@@ -1,12 +1,11 @@
-
 import logging
 import logging.handlers
 import os
 import time
 
+
 class InfluxdbLogger:
     """Repeatedly logs data from all devices"""
-    LOG_OUTPUT_FILE = "measurements.log"
 
     # the influxdb measurement we're outputting
     MEASUREMENT = "bmnode"
@@ -18,12 +17,15 @@ class InfluxdbLogger:
     # must be at least 1 to enable rotation
     MAX_BACKUP_FILES = 1
 
+    def __init__(self, path: str) -> None:
+        self.path = os.path.abspath(path)
+
     @property
     def datalog(self) -> logging.Logger:
         if not hasattr(self, "_datalog"):
             # make sure our destination exists
             try:
-                os.makedirs(os.path.dirname(os.path.abspath(self.LOG_OUTPUT_FILE)))
+                os.makedirs(os.path.dirname(self.path))
             except FileExistsError:
                 pass
 
@@ -38,7 +40,7 @@ class InfluxdbLogger:
 
             # rotate the files every once in a while to allow files to close
             handler = logging.handlers.RotatingFileHandler(
-                self.LOG_OUTPUT_FILE,
+                self.path,
                 maxBytes=self.MAX_SIZE_BYTES,
                 backupCount=self.MAX_BACKUP_FILES,
             )
@@ -58,7 +60,7 @@ class InfluxdbLogger:
     @classmethod
     def d2str(cls, d) -> str:
         """convert dictionary of key/value pairs to a string"""
-        pairs = [f"{k.replace(' ', '_')}={v}" for k,v in d.items()]
+        pairs = [f"{k.replace(' ', '_')}={v}" for k, v in d.items()]
         return ",".join(pairs)
 
     def emit(self, fields, tags, measurement=None) -> None:
