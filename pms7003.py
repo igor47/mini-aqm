@@ -33,6 +33,7 @@ class PMSData(NamedTuple):
     reserved: int  # reserved
     checksum: int  # checksum
 
+
 @dataclass
 class SearchResult:
     port: str
@@ -40,6 +41,7 @@ class SearchResult:
     hwid: str
     dev: Optional["PMS7003"] = None
     error: Optional[str] = None
+
 
 PMSStruct = struct.Struct("!2B15H")
 

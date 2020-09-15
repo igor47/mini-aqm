@@ -92,9 +92,7 @@ def print_pm(data: PMSData) -> None:
     help="Location where logs are written",
     show_default=True,
 )
-def main(
-    port: Optional[str], debug: bool, log_only: bool, log_path: str
-) -> None:
+def main(port: Optional[str], debug: bool, log_only: bool, log_path: str) -> None:
     possible: List[SearchResult] = PMS7003.find_devices(only=port)
     for p in possible:
         if p.dev is None:
@@ -123,7 +121,9 @@ def main(
     )
 
     for dev in devs:
-        click.echo(f"{Fore.GREEN}beginning to read data from {dev.id}...{Style.RESET_ALL}")
+        click.echo(
+            f"{Fore.GREEN}beginning to read data from {dev.id}...{Style.RESET_ALL}"
+        )
 
     # systemd watchdog, in case this is running as a systemd service
     wd = systemd_watchdog.watchdog()
@@ -137,11 +137,14 @@ def main(
                 print_verbose(data)
             else:
                 logger.emit(
-                    fields={k: v for k, v in data._asdict().items() if k.startswith("pm")},
+                    fields={
+                        k: v for k, v in data._asdict().items() if k.startswith("pm")
+                    },
                     tags={"type": "PMS7003", "id": dev.id},
                 )
                 if not log_only:
                     print_pm(data)
+
 
 if __name__ == "__main__":
     main()
