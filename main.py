@@ -5,10 +5,10 @@ from colorama import Fore, Style
 import logging
 import os
 import systemd_watchdog
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 from influxdb_logger import InfluxdbLogger
-from pms7003 import PMS7003, PMSData
+from pms7003 import PMS7003, PMSData, SearchResult
 
 
 def get_breakpoint(pm25: float) -> Tuple[str, str]:
@@ -95,13 +95,23 @@ def print_pm(data: PMSData) -> None:
 def main(
     port: Optional[str], debug: bool, log_only: bool, log_path: str
 ) -> None:
-    devs = PMS7003.get_all(only=port)
-    if not devs:
+    possible: List[SearchResult] = PMS7003.find_devices(only=port)
+    for p in possible:
+        if p.dev is None:
+            click.echo(
+                f"{Fore.YELLOW}"
+                f"error on {p.desc} {p.port}: {p.error}"
+                f"{Style.RESET_ALL}",
+                err=True,
+            )
+
+    devs = [p.dev for p in possible if p.dev]
+    if not any(devs):
         click.echo(
             f"{Fore.RED}"
-            f"cannot find PMS7003 on any checked port; check path and permissions"
+            f"cannot find PMS7003 on any checked port"
             f"{Style.RESET_ALL}",
-            err=True
+            err=True,
         )
         return
 

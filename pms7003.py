@@ -2,9 +2,13 @@
 PMS7003 datasheet
 http://eleparts.co.kr/data/_gextends/good-pdf/201803/good-pdf-4208690-1.pdf
 """
+
+from dataclasses import dataclass
+import glob
 import logging
 import os
 import serial
+from serial.tools.list_ports import comports
 import struct
 import time
 from typing import Any, Dict, NamedTuple, List, Optional
@@ -29,6 +33,13 @@ class PMSData(NamedTuple):
     reserved: int  # reserved
     checksum: int  # checksum
 
+@dataclass
+class SearchResult:
+    port: str
+    desc: str
+    hwid: str
+    dev: Optional["PMS7003"] = None
+    error: Optional[str] = None
 
 PMSStruct = struct.Struct("!2B15H")
 
@@ -44,15 +55,6 @@ class PMS7003(object):
     HEADER_HIGH = int("0x42", 16)
     HEADER_LOW = int("0x4d", 16)
 
-    # UART / USB Serial : 'dmesg | grep ttyUSB'
-    POSSIBLE_PORTS = {
-        'USB0': "/dev/ttyUSB0",
-        'USB1': "/dev/ttyUSB1",
-        'USB2': "/dev/ttyUSB2",
-        'UART': "/dev/ttyAMA0",
-        'S0': "/dev/serial0",
-    }
-
     # Baud Rate
     SERIAL_SPEED = 9600
 
@@ -60,26 +62,37 @@ class PMS7003(object):
     READ_TIMEOUT_SEC = 2
 
     @classmethod
-    def get_all(cls, only: Optional[str] = None) -> List['PMS7003']:
+    def find_devices(cls, only: Optional[str] = None) -> List[SearchResult]:
         """checks several possible locations for PMS7003 devices
 
         returns all valid locations
         """
-        devs = []
+        # figure out possible device paths to check
+        if only:
+            possible = [SearchResult(port=only, desc="user-specified", hwid="")]
+        else:
+            possible = [
+                SearchResult(port=p, desc=d, hwid=h) for (p, d, h) in comports()
+            ]
 
-        possible = [only] if only else cls.POSSIBLE_PORTS.values()
-        for port in possible:
-            if os.access(port, mode=os.R_OK, follow_symlinks=True):
+        for p in possible:
+            if not os.path.exists(p.port):
+                p.error = "no such port"
+            elif not os.access(p.port, mode=os.R_OK, follow_symlinks=True):
+                p.error = "access denied"
+            else:
                 try:
-                    dev = PMS7003(port)
+                    dev = PMS7003(p.port)
                     if dev.read():
-                        devs.append(dev)
-                except:
-                    pass
+                        p.dev = dev
+                    else:
+                        p.error = "no data"
+                except Exception as e:
+                    p.error = str(e)
 
-        return devs
+        return possible
 
-    def __init__(self, port: str = POSSIBLE_PORTS["S0"]):
+    def __init__(self, port: str):
         self.port = port
         self.buffer: bytes = b""
         self.log = logging.getLogger(str(self))
