@@ -67,6 +67,12 @@ def print_pm(data: PMSData) -> None:
     pairs = [f"{k}: {v}" for k, v in result.items()]
     click.echo("  ".join(pairs))
 
+def configure_logging(debug: bool) -> None:
+    """sets up logging to stdout"""
+    root = logging.getLogger("mini-aqm")
+    root.addHandler(logging.StreamHandler())
+    root.setLevel(logging.DEBUG if debug else logging.ERROR)
+    root.debug("configured debug logging")
 
 @click.command()
 @click.option(
@@ -93,7 +99,21 @@ def print_pm(data: PMSData) -> None:
     show_default=True,
 )
 def main(port: Optional[str], debug: bool, log_only: bool, log_path: str) -> None:
+    configure_logging(debug)
+
+    log = logging.getLogger("mini-aqm.main")
+    log.debug("looking for possible PMS7003 devices...")
+
     possible: List[SearchResult] = PMS7003.find_devices(only=port)
+    if not any(possible):
+        click.echo(
+            f"{Fore.RED}"
+            f"no serial devices found. is your device plugged in? did you install drivers?"
+            f"{Style.RESET_ALL}",
+            err=True,
+        )
+        return
+
     for p in possible:
         if p.dev is None:
             click.echo(
@@ -107,7 +127,7 @@ def main(port: Optional[str], debug: bool, log_only: bool, log_path: str) -> Non
     if not any(devs):
         click.echo(
             f"{Fore.RED}"
-            f"cannot find PMS7003 on any checked port"
+            f"no PMS7003 devices found; resolve any errors printed above and try again"
             f"{Style.RESET_ALL}",
             err=True,
         )
@@ -134,7 +154,7 @@ def main(port: Optional[str], debug: bool, log_only: bool, log_path: str) -> Non
         for dev in devs:
             data = dev.read()
             if debug:
-                print_verbose(data)
+                print_debug(data)
             else:
                 logger.emit(
                     fields={

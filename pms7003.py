@@ -64,20 +64,31 @@ class PMS7003(object):
     READ_TIMEOUT_SEC = 2
 
     @classmethod
+    def get_logger(cls, dev: str = None) -> logging.Logger:
+        path = ".".join(filter(None, ('mini-aqm', cls.__name__, dev)))
+        return logging.getLogger(path)
+
+    @classmethod
     def find_devices(cls, only: Optional[str] = None) -> List[SearchResult]:
         """checks several possible locations for PMS7003 devices
 
         returns all valid locations
         """
+        log = cls.get_logger()
+
         # figure out possible device paths to check
         if only:
+            log.debug(f"listing results from specified port {port}")
             possible = [SearchResult(port=only, desc="user-specified", hwid="")]
         else:
+            log.debug("listing results from all com ports...")
             possible = [
                 SearchResult(port=p, desc=d, hwid=h) for (p, d, h) in comports()
             ]
 
+        log.debug(f"checking {len(possible)} ports for PMS7003 device...")
         for p in possible:
+            log.debug(f"\tchecking port {p.port}...")
             if not os.path.exists(p.port):
                 p.error = "no such port"
             elif not os.access(p.port, mode=os.R_OK, follow_symlinks=True):
@@ -97,7 +108,7 @@ class PMS7003(object):
     def __init__(self, port: str):
         self.port = port
         self.buffer: bytes = b""
-        self.log = logging.getLogger(str(self))
+        self.log = self.get_logger(str(self))
 
         self.checksum_errors = 0
 
