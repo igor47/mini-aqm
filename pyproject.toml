@@ -6,7 +6,7 @@ authors = ["Igor Serebryany <igor47@moomers.org>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 pyserial = "^3.4"
 click = "^7.1.2"
 colorama = "^0.4.3"
