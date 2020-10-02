@@ -78,7 +78,7 @@ class PMS7003(object):
 
         # figure out possible device paths to check
         if only:
-            log.debug(f"listing results from specified port {port}")
+            log.debug(f"listing results from specified port {only}")
             possible = [SearchResult(port=only, desc="user-specified", hwid="")]
         else:
             log.debug("listing results from all com ports...")
