@@ -145,6 +145,9 @@ class PMS7003(object):
             # read until we have at least the right number of bytes
             while len(self.buffer) < self.PMS_7003_PROTOCOL_SIZE:
                 self.buffer += self.serial.read(1024)
+                # break if we're not getting any data
+                if len(self.buffer) == 0:
+                    break
 
             # consume until buffer is nearly-empty
             while len(self.buffer) >= self.PMS_7003_PROTOCOL_SIZE:
