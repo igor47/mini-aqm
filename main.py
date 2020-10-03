@@ -10,6 +10,26 @@ from typing import Tuple, Optional, List
 from influxdb_logger import InfluxdbLogger
 from pms7003 import PMS7003, PMSData, SearchResult
 
+def get_aqi(pm25: float) -> str:
+    """return the aqi for the pm25 value"""
+    # https://en.wikipedia.org/wiki/Air_quality_index#Computing_the_AQI
+    # Table for computing AQI from PM2.5, ug/m3
+    # c_low, c_high, i_low, i_high
+    breakpoint_table = [
+        [    0,  12.0,   0,  50],
+        [ 12.1,  35.4,  51, 100],
+        [ 35.5,  55.4, 101, 150],
+        [ 55.5, 150.4, 151, 200],
+        [150.5, 250.4, 201, 300],
+        [250.5, 350.4, 301, 400],
+        [350.5, 500.4, 401, 500],
+    ]
+    category_row = next(x for x in breakpoint_table if pm25 <= x[3])
+
+    c_low, c_high, i_low, i_high = category_row
+    aqi = (i_high - i_low) / (c_high - c_low) * (pm25 - c_low) + i_low
+    return round(aqi)
+
 
 def get_breakpoint(pm25: float) -> Tuple[str, str]:
     """get colorized breakpoint for the pm25 value"""
@@ -61,6 +81,7 @@ def print_pm(data: PMSData) -> None:
         "PM 1.0": data.pm1_0_atm,
         "PM 2.5": f"{style}{data.pm2_5_atm}{Style.RESET_ALL}",
         "PM 10": data.pm10_0_atm,
+        "AQI#": get_aqi(data.pm2_5_atm),
         "AQI": f"{style}{aqi}{Style.RESET_ALL}",
     }
 
