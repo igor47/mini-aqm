@@ -24,7 +24,7 @@ def get_aqi(pm25: float) -> str:
         [250.5, 350.4, 301, 400],
         [350.5, 500.4, 401, 500],
     ]
-    category_row = next(x for x in breakpoint_table if pm25 <= x[3])
+    category_row = next(x for x in breakpoint_table if pm25 <= x[1])
 
     c_low, c_high, i_low, i_high = category_row
     aqi = (i_high - i_low) / (c_high - c_low) * (pm25 - c_low) + i_low
