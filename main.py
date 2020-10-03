@@ -31,17 +31,17 @@ def get_aqi(pm25: float) -> str:
     return round(aqi)
 
 
-def get_breakpoint(pm25: float) -> Tuple[str, str]:
-    """get colorized breakpoint for the pm25 value"""
-    if pm25 < 15.5:
+def get_aqi_level(aqi: float) -> Tuple[str, str]:
+    """get colorized breakpoint for the aqi value"""
+    if aqi < 50:
         return "Good", Fore.GREEN
-    elif pm25 < 40.5:
+    elif aqi < 100:
         return "Moderate", Fore.YELLOW
-    elif pm25 < 65.5:
+    elif aqi < 150:
         return "Unhealthy for Certain Groups", f"{Fore.YELLOW}{Style.BRIGHT}"
-    elif pm25 < 150:
+    elif aqi < 200:
         return "Unhealthy", Fore.RED
-    elif pm25 < 250:
+    elif aqi < 300:
         return "Very Unhealthy", f"{Fore.RED}{Style.BRIGHT}"
     else:
         return "Hazardous", Fore.MAGENTA
@@ -75,14 +75,14 @@ def print_debug(data: PMSData) -> None:
 
 def print_pm(data: PMSData) -> None:
     """print PM values to the console"""
-    aqi, style = get_breakpoint(data.pm2_5_atm)
+    aqi = get_aqi(data.pm2_5_atm)
+    level, style = get_aqi_level(aqi)
 
     result = {
         "PM 1.0": data.pm1_0_atm,
         "PM 2.5": f"{style}{data.pm2_5_atm}{Style.RESET_ALL}",
         "PM 10": data.pm10_0_atm,
-        "AQI#": get_aqi(data.pm2_5_atm),
-        "AQI": f"{style}{aqi}{Style.RESET_ALL}",
+        "AQI": f"{style}{aqi} ({level}){Style.RESET_ALL}",
     }
 
     pairs = [f"{k}: {v}" for k, v in result.items()]
