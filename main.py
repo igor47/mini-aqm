@@ -174,7 +174,10 @@ def main(port: Optional[str], debug: bool, log_only: bool, log_path: str) -> Non
         wd.ping()
         for dev in devs:
             data = dev.read()
-            if debug:
+            if data is None:
+                click.echo(f"{Fore.RED}PMS7003 returned no data!{Style.RESET_ALL}")
+
+            elif debug:
                 print_debug(data)
             else:
                 logger.emit(

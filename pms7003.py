@@ -129,7 +129,7 @@ class PMS7003(object):
 
         return self._serial
 
-    def read(self) -> PMSData:
+    def read(self) -> Optional[PMSData]:
         """Returns a PMS reading"""
         self.serial.flushInput()
 
